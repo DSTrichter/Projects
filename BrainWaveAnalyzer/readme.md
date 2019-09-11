@@ -1,4 +1,4 @@
-focus | attention | confusion | effort
+# focus | attention | confusion | effort
 
 Problem Statement:
 Can a reliable model be built that measures an individual's brain waves and pupil dilation in order to explore effort, attention, focus, and struggle. By averaging this model’s predictions, can a metric of learning provide a reliable correlation to real life performance.
