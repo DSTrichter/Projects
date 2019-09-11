@@ -1,0 +1,96 @@
+#!/usr/bin/env python
+
+import sys
+
+import IPython.display as ipd
+
+import datetime
+import time
+import csv
+import os #to get current working directory
+
+import pandas as pd
+import numpy as np
+
+import soundfile as sf
+#!brew install portaudio
+import pyaudio
+import wave
+
+
+path = os.getcwd() + "/data/audio/"
+sound_file = './data/beep-07.wav'
+
+
+def record_audio(channels=1, rate=48000,
+                 length=10, trials=1,
+                 audio_list=[]):
+
+    FORMAT = pyaudio.paInt16
+    CHANNELS = channels
+    RATE = rate
+    CHUNK = 2000
+    RECORD_SECONDS = length
+
+    path = os.getcwd() + "/data/audio/"
+    next_rec = len("./data/audio/"+str(pd.to_datetime(time.ctime()))[0:10]+"/") + 1
+
+    for rep in range(trials):
+        p = pyaudio.PyAudio()
+
+        #Naming Files
+        curr_date_folder = str(pd.to_datetime(time.ctime()))[0:10]+"/"
+        output_folder="./data/audio/"+ curr_date_folder #Gives current date
+        output_file_extension="trial_" + str(len(os.listdir(output_folder))-1) + ".wav"
+        output_file = output_folder + output_file_extension
+
+
+        # start Recording
+        start_time = pd.to_datetime(float(time.time()), unit='s', utc=True).tz_convert('US/Eastern')
+        stream = p.open(format=FORMAT, channels=CHANNELS,
+                        rate=RATE, input=True,
+                        frames_per_buffer=CHUNK)
+        print("recording...")
+        frames = []
+
+        for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+            data, time_stamp = stream.read(CHUNK), time.time()
+            frames.append(data)
+
+        # stop Recording
+        end_time = pd.to_datetime(float(time.time()), unit='s', utc=True).tz_convert('US/Eastern')
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+        print("finished recording")
+
+        #Play beep to inform the end of a epoch
+        ipd.display(ipd.Audio(sound_file, autoplay=True));
+
+        #Use wave package to convert to a .wav file
+        waveFile = wave.open(output_file, 'wb')
+        waveFile.setnchannels(CHANNELS)
+        waveFile.setsampwidth(p.get_sample_size(FORMAT))
+        waveFile.setframerate(RATE)
+        waveFile.writeframes(b''.join(frames))
+        waveFile.close()
+
+        try:
+            with open('audio.csv','a') as f:
+                f.write(f'{output_file}, {start_time}, {end_time}, {RATE}, {end_time - start_time}\n')
+        except:
+            with open('audio.csv', 'w') as f:
+                f = csv.writer(csvfile, delimiter=',')
+                f.writerow(['file','start_time', 'stop_time', 'rate', 'length'])
+                f.write(f'{output_file}, {start_time}, {end_time}, {RATE}, {end_time - start_time}\n')
+
+
+        audio_rate, audio_data = wavfile.read(output_file)
+        audio_list.append(audio_data)
+        time.sleep(1)
+
+    return audio_list
+
+length= sys.argv[1]
+
+record_audio(length=length)
