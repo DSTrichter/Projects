@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Random Bookmark Opener",
+  "version": "1.0.0",
+  "description": "Single click to open a random bookmark. Configurable filters by tags, keywords, or subfolders, with exclusion rules.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "random-bookmark-opener@local",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "tabs"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "action": {
+    "default_title": "Open a random bookmark",
+    "default_icon": {
+      "48": "icons/icon-48.svg",
+      "96": "icons/icon-96.svg"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "48": "icons/icon-48.svg",
+    "96": "icons/icon-96.svg"
+  }
+}
