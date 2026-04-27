@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Random Bookmark Opener – Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>Random Bookmark Opener</h1>
+    <p class="lead">
+      Click the toolbar icon to open a random bookmark. Use the filters below to
+      narrow which bookmarks are eligible. All fields accept comma-separated
+      values. Filters are case-insensitive.
+    </p>
+
+    <section>
+      <h2>Include filters</h2>
+      <p class="hint">
+        Only bookmarks matching these are eligible. Leave all blank to allow
+        every bookmark.
+      </p>
+
+      <label>
+        <span>Keywords (match in title or URL)</span>
+        <input id="includeKeywords" type="text" placeholder="e.g. docs, recipe, python">
+      </label>
+
+      <label>
+        <span>Tags (matches <code>#tag</code> tokens in bookmark titles)</span>
+        <input id="includeTags" type="text" placeholder="e.g. reading, tutorial">
+      </label>
+
+      <label>
+        <span>Folders (folder name or path, e.g. <code>Toolbar/Work</code>)</span>
+        <input id="includeFolders" type="text" placeholder="e.g. Work, Recipes, Toolbar/News">
+      </label>
+
+      <fieldset class="radios">
+        <legend>Combine include filters using:</legend>
+        <label class="inline">
+          <input type="radio" name="matchMode" value="any" checked>
+          Match ANY active include filter
+        </label>
+        <label class="inline">
+          <input type="radio" name="matchMode" value="all">
+          Match ALL active include filters
+        </label>
+      </fieldset>
+    </section>
+
+    <section>
+      <h2>Exclude filters</h2>
+      <p class="hint">
+        Bookmarks matching any of these will be skipped. Exclusions override
+        includes.
+      </p>
+
+      <label>
+        <span>Exclude keywords</span>
+        <input id="excludeKeywords" type="text" placeholder="e.g. archive, draft">
+      </label>
+
+      <label>
+        <span>Exclude tags</span>
+        <input id="excludeTags" type="text" placeholder="e.g. stale, nsfw">
+      </label>
+
+      <label>
+        <span>Exclude folders</span>
+        <input id="excludeFolders" type="text" placeholder="e.g. Trash, Old, Archive">
+      </label>
+    </section>
+
+    <section>
+      <h2>Behavior</h2>
+      <label class="inline">
+        <input id="openInNewTab" type="checkbox" checked>
+        Open in a new tab (uncheck to replace the current tab)
+      </label>
+    </section>
+
+    <div class="actions">
+      <button id="save" type="button">Save</button>
+      <button id="reset" type="button" class="secondary">Reset to defaults</button>
+      <span id="status" class="status" aria-live="polite"></span>
+    </div>
+
+    <section class="tip">
+      <h2>Tips</h2>
+      <ul>
+        <li>
+          <strong>Tags:</strong> Firefox's internal tag database isn't available
+          to extensions, so this add-on treats <code>#word</code> tokens inside
+          a bookmark's title as tags. Edit a bookmark's name to add or remove
+          them.
+        </li>
+        <li>
+          <strong>Folders:</strong> A plain name (<code>Work</code>) matches any
+          folder with that name in the bookmark's ancestry. Use a slash
+          (<code>Toolbar/Work/Docs</code>) to match a specific path fragment.
+        </li>
+        <li>
+          <strong>Keywords:</strong> Simple case-insensitive substring match
+          against the bookmark's title and URL.
+        </li>
+      </ul>
+    </section>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

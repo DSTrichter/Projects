@@ -1,0 +1,87 @@
+# Random Bookmark Opener
+
+A Firefox extension that opens a random bookmark with a single click on the
+toolbar icon. Includes configurable include/exclude filters for tags,
+keywords, and subfolders.
+
+## Features
+
+- **One click, one random bookmark.** Click the toolbar button and a random
+  eligible bookmark opens in a new tab (configurable).
+- **Include filters** — restrict the candidate pool by:
+  - **Keywords** (substring match against title + URL)
+  - **Tags** (tokens like `#reading` inside bookmark titles)
+  - **Folders** (by name, e.g. `Work`, or by path fragment, e.g. `Toolbar/Docs`)
+- **Match mode** for include filters: ANY active filter (default) or ALL.
+- **Exclude filters** with the same three dimensions (keywords, tags, folders).
+  Exclusions always override includes.
+- **Empty-pool feedback.** When no bookmarks match, the toolbar shows a brief
+  `0` badge instead of silently doing nothing.
+
+## Installation (temporary / development)
+
+1. Open `about:debugging#/runtime/this-firefox` in Firefox.
+2. Click **Load Temporary Add-on…**
+3. Select `manifest.json` inside this folder.
+
+The toolbar button will appear. Right-click it → **Manage Extension → Options**
+to configure filters (or use `about:addons` → Preferences).
+
+## Packaging
+
+To build a distributable `.xpi`, zip the contents of this folder (not the
+folder itself):
+
+```bash
+cd RandomBookmarkOpener
+zip -r ../random-bookmark-opener.xpi . -x "*.DS_Store" "README.md"
+```
+
+For signed distribution, submit to
+[addons.mozilla.org](https://addons.mozilla.org/developers/).
+
+## How filters work
+
+### Keywords
+Case-insensitive substring match against the bookmark's title combined with
+its URL. Any one listed keyword that appears is a match.
+
+### Tags
+Firefox's internal tag database is not exposed to WebExtensions, so this
+add-on treats `#word` tokens embedded in a bookmark's title as tags. Rename a
+bookmark to `Hacker News #reading #tech` to tag it.
+
+### Folders
+- A plain folder name (`Work`) matches any ancestor folder with that name.
+- A path fragment with slashes (`Toolbar/Work/Docs`) matches if that fragment
+  appears anywhere in the bookmark's folder path.
+- Both are case-insensitive.
+
+### Include vs exclude
+- If **no** include filters are set, every bookmark is eligible.
+- If any include filters are set, a bookmark must pass them (ANY or ALL,
+  based on match mode) to be eligible.
+- If **any** exclude filter matches, the bookmark is dropped regardless of
+  include matches.
+
+## File layout
+
+```
+RandomBookmarkOpener/
+├── manifest.json     # MV3 manifest
+├── background.js     # click handler + filter logic
+├── options.html      # settings UI
+├── options.js        # settings load/save
+├── options.css       # settings styling
+└── icons/
+    ├── icon-48.svg
+    └── icon-96.svg
+```
+
+## Permissions
+
+- `bookmarks` — read the bookmark tree to pick a candidate.
+- `storage` — persist your filter settings.
+- `tabs` — open the picked bookmark in a new or current tab.
+
+No network requests, no telemetry.
