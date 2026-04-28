@@ -119,13 +119,17 @@ function passesExcludeFilters(bookmark, folderPath, settings) {
 async function collectCandidates(settings) {
   const { bookmarks } = await walkTree();
   const candidates = [];
+  let withTags = 0;
+  let totalUrls = 0;
   for (const { node, folderPath } of bookmarks) {
     if (!/^https?:|^ftp:|^file:/i.test(node.url)) continue;
+    totalUrls++;
+    if (extractTags(node.title).length) withTags++;
     if (!passesIncludeFilters(node, folderPath, settings)) continue;
     if (!passesExcludeFilters(node, folderPath, settings)) continue;
-    candidates.push(node);
+    candidates.push({ node, folderPath });
   }
-  return candidates;
+  return { candidates, totalUrls, withTags };
 }
 
 const browserAction = browser.browserAction || browser.action;
@@ -142,7 +146,21 @@ async function openRandomBookmark() {
     excludeFolders: normalizeList(raw.excludeFolders)
   };
 
-  const candidates = await collectCandidates(settings);
+  console.log("[RandomBookmark] active settings:", JSON.stringify(settings, null, 2));
+
+  const { candidates, totalUrls, withTags } = await collectCandidates(settings);
+  console.log(`[RandomBookmark] ${candidates.length} candidate(s) of ${totalUrls} bookmarks (${withTags} have #tag tokens in title)`);
+
+  if (candidates.length) {
+    const sample = candidates.slice(0, 5).map(c => ({
+      title: c.node.title,
+      tags: extractTags(c.node.title),
+      folder: c.folderPath.join("/"),
+      url: c.node.url
+    }));
+    console.log("[RandomBookmark] first up to 5 candidates:", sample);
+  }
+
   if (!candidates.length) {
     await browserAction.setBadgeBackgroundColor({ color: "#c0392b" });
     await browserAction.setBadgeText({ text: "0" });
@@ -150,7 +168,13 @@ async function openRandomBookmark() {
     return;
   }
 
-  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  const { node: pick, folderPath } = candidates[Math.floor(Math.random() * candidates.length)];
+  console.log("[RandomBookmark] picked:", {
+    title: pick.title,
+    tags: extractTags(pick.title),
+    folder: folderPath.join("/"),
+    url: pick.url
+  });
   if (settings.openInNewTab) {
     await browser.tabs.create({ url: pick.url, active: true });
   } else {
