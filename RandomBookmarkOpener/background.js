@@ -128,6 +128,8 @@ async function collectCandidates(settings) {
   return candidates;
 }
 
+const browserAction = browser.browserAction || browser.action;
+
 async function openRandomBookmark() {
   const raw = await getSettings();
   const settings = {
@@ -142,9 +144,9 @@ async function openRandomBookmark() {
 
   const candidates = await collectCandidates(settings);
   if (!candidates.length) {
-    await browser.action.setBadgeBackgroundColor({ color: "#c0392b" });
-    await browser.action.setBadgeText({ text: "0" });
-    setTimeout(() => browser.action.setBadgeText({ text: "" }), 2000);
+    await browserAction.setBadgeBackgroundColor({ color: "#c0392b" });
+    await browserAction.setBadgeText({ text: "0" });
+    setTimeout(() => browserAction.setBadgeText({ text: "" }), 2000);
     return;
   }
 
@@ -156,6 +158,16 @@ async function openRandomBookmark() {
   }
 }
 
-browser.action.onClicked.addListener(() => {
-  openRandomBookmark().catch(err => console.error("RandomBookmark error", err));
+console.log("[RandomBookmark] background loaded; using",
+  browser.browserAction ? "browserAction" : "action");
+
+browserAction.onClicked.addListener(() => {
+  console.log("[RandomBookmark] toolbar clicked");
+  openRandomBookmark().catch(err => console.error("[RandomBookmark] error", err));
 });
+
+if (browser.commands && browser.commands.onCommand) {
+  browser.commands.onCommand.addListener(name => {
+    console.log("[RandomBookmark] command", name);
+  });
+}
