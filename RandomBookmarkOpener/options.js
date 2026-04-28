@@ -5,8 +5,13 @@ const DEFAULTS = {
   excludeKeywords: [],
   excludeTags: [],
   excludeFolders: [],
-  openInNewTab: true,
-  matchMode: "any"
+  includeKeywordsMode: "any",
+  includeTagsMode: "all",
+  includeFoldersMode: "any",
+  excludeKeywordsMode: "any",
+  excludeTagsMode: "any",
+  excludeFoldersMode: "any",
+  openInNewTab: true
 };
 
 const LIST_FIELDS = [
@@ -17,6 +22,8 @@ const LIST_FIELDS = [
   "excludeTags",
   "excludeFolders"
 ];
+
+const MODE_FIELDS = LIST_FIELDS.map(f => `${f}Mode`);
 
 function parseList(value) {
   return value
@@ -36,10 +43,11 @@ async function load() {
   for (const field of LIST_FIELDS) {
     document.getElementById(field).value = formatList(settings[field]);
   }
+  for (const field of MODE_FIELDS) {
+    const el = document.getElementById(field);
+    if (el) el.value = settings[field] === "all" ? "all" : "any";
+  }
   document.getElementById("openInNewTab").checked = !!settings.openInNewTab;
-  const mode = settings.matchMode === "all" ? "all" : "any";
-  const radio = document.querySelector(`input[name="matchMode"][value="${mode}"]`);
-  if (radio) radio.checked = true;
 }
 
 async function save() {
@@ -47,9 +55,11 @@ async function save() {
   for (const field of LIST_FIELDS) {
     settings[field] = parseList(document.getElementById(field).value);
   }
+  for (const field of MODE_FIELDS) {
+    const el = document.getElementById(field);
+    settings[field] = el && el.value === "all" ? "all" : "any";
+  }
   settings.openInNewTab = document.getElementById("openInNewTab").checked;
-  const checked = document.querySelector('input[name="matchMode"]:checked');
-  settings.matchMode = checked ? checked.value : "any";
 
   await browser.storage.local.set({ settings });
   flashStatus("Saved.");
