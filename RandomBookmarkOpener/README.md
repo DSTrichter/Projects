@@ -24,6 +24,8 @@ keywords, and subfolders.
   Exclusions always override includes.
 - **Empty-pool feedback.** When no bookmarks match, the toolbar shows a brief
   `0` badge instead of silently doing nothing.
+- **Keyboard shortcut.** Default `Alt+Shift+R`. Customize at `about:addons` →
+  gear icon (top right) → **Manage Extension Shortcuts**.
 
 ## Installation (temporary / development)
 
@@ -82,8 +84,9 @@ RandomBookmarkOpener/
 ├── options.js        # settings load/save
 ├── options.css       # settings styling
 └── icons/
-    ├── icon-48.svg
-    └── icon-96.svg
+    ├── icon-32.png
+    ├── icon-48.png
+    └── icon-96.png
 ```
 
 ## Permissions
