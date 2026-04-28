@@ -19,12 +19,6 @@ async function getSettings() {
   return { ...DEFAULT_SETTINGS, ...(stored.settings || {}) };
 }
 
-function extractTags(title) {
-  if (!title) return [];
-  const matches = title.match(/#[\p{L}\p{N}_-]+/gu) || [];
-  return matches.map(t => t.slice(1).toLowerCase());
-}
-
 function normalizeList(list) {
   return (list || [])
     .map(s => String(s).trim().toLowerCase())
@@ -73,21 +67,36 @@ function keywordMatches(haystack, keywords, mode) {
   return combine(keywords, k => hay.includes(k), mode);
 }
 
-function tagMatches(tags, wanted, mode) {
-  if (!wanted.length) return false;
-  return combine(wanted, t => tags.includes(t), mode);
+async function tagSearchSet(tagValues, mode) {
+  if (!tagValues.length) return null;
+  const sets = await Promise.all(
+    tagValues.map(async value => {
+      const results = await browser.bookmarks.search(value);
+      return new Set(results.filter(r => r.url).map(r => r.id));
+    })
+  );
+  if (mode === "all") {
+    let acc = sets[0];
+    for (let i = 1; i < sets.length; i++) {
+      const next = new Set();
+      for (const id of acc) if (sets[i].has(id)) next.add(id);
+      acc = next;
+    }
+    return acc;
+  }
+  const union = new Set();
+  for (const s of sets) for (const id of s) union.add(id);
+  return union;
 }
 
-function passesIncludeFilters(bookmark, folderPath, settings) {
+function passesIncludeFilters(bookmark, folderPath, settings, includeTagSet) {
   const haystack = `${bookmark.title || ""} ${bookmark.url || ""}`;
-  const tags = extractTags(bookmark.title);
 
   if (settings.includeKeywords.length &&
       !keywordMatches(haystack, settings.includeKeywords, settings.includeKeywordsMode)) {
     return false;
   }
-  if (settings.includeTags.length &&
-      !tagMatches(tags, settings.includeTags, settings.includeTagsMode)) {
+  if (includeTagSet && !includeTagSet.has(bookmark.id)) {
     return false;
   }
   if (settings.includeFolders.length &&
@@ -97,16 +106,14 @@ function passesIncludeFilters(bookmark, folderPath, settings) {
   return true;
 }
 
-function passesExcludeFilters(bookmark, folderPath, settings) {
+function passesExcludeFilters(bookmark, folderPath, settings, excludeTagSet) {
   const haystack = `${bookmark.title || ""} ${bookmark.url || ""}`;
-  const tags = extractTags(bookmark.title);
 
   if (settings.excludeKeywords.length &&
       keywordMatches(haystack, settings.excludeKeywords, settings.excludeKeywordsMode)) {
     return false;
   }
-  if (settings.excludeTags.length &&
-      tagMatches(tags, settings.excludeTags, settings.excludeTagsMode)) {
+  if (excludeTagSet && excludeTagSet.has(bookmark.id)) {
     return false;
   }
   if (settings.excludeFolders.length &&
@@ -117,19 +124,27 @@ function passesExcludeFilters(bookmark, folderPath, settings) {
 }
 
 async function collectCandidates(settings) {
-  const { bookmarks } = await walkTree();
+  const [{ bookmarks }, includeTagSet, excludeTagSet] = await Promise.all([
+    walkTree(),
+    tagSearchSet(settings.includeTags, settings.includeTagsMode),
+    tagSearchSet(settings.excludeTags, settings.excludeTagsMode)
+  ]);
+
   const candidates = [];
-  let withTags = 0;
   let totalUrls = 0;
   for (const { node, folderPath } of bookmarks) {
     if (!/^https?:|^ftp:|^file:/i.test(node.url)) continue;
     totalUrls++;
-    if (extractTags(node.title).length) withTags++;
-    if (!passesIncludeFilters(node, folderPath, settings)) continue;
-    if (!passesExcludeFilters(node, folderPath, settings)) continue;
+    if (!passesIncludeFilters(node, folderPath, settings, includeTagSet)) continue;
+    if (!passesExcludeFilters(node, folderPath, settings, excludeTagSet)) continue;
     candidates.push({ node, folderPath });
   }
-  return { candidates, totalUrls, withTags };
+  return {
+    candidates,
+    totalUrls,
+    includeTagSetSize: includeTagSet ? includeTagSet.size : null,
+    excludeTagSetSize: excludeTagSet ? excludeTagSet.size : null
+  };
 }
 
 const browserAction = browser.browserAction || browser.action;
@@ -148,13 +163,17 @@ async function openRandomBookmark() {
 
   console.log("[RandomBookmark] active settings:", JSON.stringify(settings, null, 2));
 
-  const { candidates, totalUrls, withTags } = await collectCandidates(settings);
-  console.log(`[RandomBookmark] ${candidates.length} candidate(s) of ${totalUrls} bookmarks (${withTags} have #tag tokens in title)`);
+  const result = await collectCandidates(settings);
+  const { candidates, totalUrls, includeTagSetSize, excludeTagSetSize } = result;
+  console.log(
+    `[RandomBookmark] ${candidates.length} candidate(s) of ${totalUrls} bookmarks` +
+    (includeTagSetSize !== null ? ` (include-tag search matched ${includeTagSetSize})` : "") +
+    (excludeTagSetSize !== null ? ` (exclude-tag search matched ${excludeTagSetSize})` : "")
+  );
 
   if (candidates.length) {
     const sample = candidates.slice(0, 5).map(c => ({
       title: c.node.title,
-      tags: extractTags(c.node.title),
       folder: c.folderPath.join("/"),
       url: c.node.url
     }));
@@ -171,7 +190,6 @@ async function openRandomBookmark() {
   const { node: pick, folderPath } = candidates[Math.floor(Math.random() * candidates.length)];
   console.log("[RandomBookmark] picked:", {
     title: pick.title,
-    tags: extractTags(pick.title),
     folder: folderPath.join("/"),
     url: pick.url
   });

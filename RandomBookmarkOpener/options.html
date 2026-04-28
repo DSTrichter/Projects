@@ -41,8 +41,8 @@
 
       <div class="row">
         <label class="grow">
-          <span>Tags (matches <code>#tag</code> tokens in titles; <code>#</code> optional here)</span>
-          <input id="includeTags" type="text" placeholder="e.g. travel, germany  (or #travel, #germany)">
+          <span>Tags (uses Firefox's bookmark search — matches title, URL, or tag)</span>
+          <input id="includeTags" type="text" placeholder="e.g. travel, germany">
         </label>
         <label class="mode">
           <span>Mode</span>
@@ -92,7 +92,7 @@
 
       <div class="row">
         <label class="grow">
-          <span>Exclude tags</span>
+          <span>Exclude tags (uses bookmark search — matches title, URL, or tag)</span>
           <input id="excludeTags" type="text" placeholder="e.g. stale, nsfw">
         </label>
         <label class="mode">
@@ -137,16 +137,17 @@
       <h2>Tips</h2>
       <ul>
         <li>
-          <strong>Match all on tags</strong> is the common case — e.g. enter
-          <code>travel, germany</code> with mode <em>match all</em> to require
-          a bookmark whose title contains both <code>#travel</code> and
-          <code>#germany</code>.
+          <strong>Tags use Firefox's awesomebar search.</strong> Each value
+          you enter is run through <code>bookmarks.search()</code>, the same
+          search the URL bar uses. It matches your real Firefox tags, but
+          also matches the bookmark's title and URL — there's no API to
+          tell the three apart.
         </li>
         <li>
-          <strong>Tags:</strong> Firefox's internal tag database isn't exposed
-          to extensions, so this add-on treats <code>#word</code> tokens inside
-          a bookmark's title as tags. Edit a bookmark's title to add or remove
-          them.
+          <strong>Match all is the common case.</strong> Enter
+          <code>travel, germany</code> with mode <em>match all</em> to
+          require a bookmark to match both terms (in any of title, URL, or
+          tag). Mode <em>match any</em> = either term.
         </li>
         <li>
           <strong>Folders:</strong> A plain name (<code>Work</code>) matches

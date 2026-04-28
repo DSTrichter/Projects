@@ -10,7 +10,8 @@ keywords, and subfolders.
   eligible bookmark opens in a new tab (configurable).
 - **Include filters** — restrict the candidate pool by:
   - **Keywords** (substring match against title + URL)
-  - **Tags** (tokens like `#reading` inside bookmark titles)
+  - **Tags** (uses Firefox's `bookmarks.search()` — matches your real Firefox
+    tags as well as bookmark titles and URLs)
   - **Folders** (by name, e.g. `Work`, or by path fragment, e.g. `Toolbar/Docs`)
 - **Per-field match mode.** Each filter field has its own *match any* /
   *match all* toggle. Set Tags to *match all* to require a bookmark to have
@@ -56,9 +57,15 @@ Case-insensitive substring match against the bookmark's title combined with
 its URL. Any one listed keyword that appears is a match.
 
 ### Tags
-Firefox's internal tag database is not exposed to WebExtensions, so this
-add-on treats `#word` tokens embedded in a bookmark's title as tags. Rename a
-bookmark to `Hacker News #reading #tech` to tag it.
+Each value is fed to `browser.bookmarks.search(value)` — the same search
+the awesomebar performs. That means it honors your real Firefox tags (set
+via the Edit Bookmark UI) **and** matches bookmark titles and URLs. The
+WebExtensions API doesn't expose the underlying tag list, so we can't
+distinguish a tag-match from a title/URL-match.
+
+With *match all*, the result is the intersection of each value's search
+result, so `travel, germany` selects bookmarks where both terms appear
+somewhere (title, URL, or tag).
 
 ### Folders
 - A plain folder name (`Work`) matches any ancestor folder with that name.
