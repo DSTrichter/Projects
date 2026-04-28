@@ -70,6 +70,38 @@ label.inline {
   margin-right: 1rem;
 }
 
+.row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin: 0.75rem 0;
+}
+
+.row > label { margin: 0; }
+.row > .grow { flex: 1 1 auto; min-width: 0; }
+.row > .mode { flex: 0 0 9.5rem; }
+
+select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.95rem;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+@media (max-width: 520px) {
+  .row { flex-direction: column; align-items: stretch; }
+  .row > .mode { flex: 1 1 auto; }
+}
+
 input[type="text"] {
   width: 100%;
   padding: 0.5rem 0.6rem;

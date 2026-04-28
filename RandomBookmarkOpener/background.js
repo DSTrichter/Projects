@@ -5,8 +5,13 @@ const DEFAULT_SETTINGS = {
   excludeKeywords: [],
   excludeTags: [],
   excludeFolders: [],
-  openInNewTab: true,
-  matchMode: "any"
+  includeKeywordsMode: "any",
+  includeTagsMode: "all",
+  includeFoldersMode: "any",
+  excludeKeywordsMode: "any",
+  excludeTagsMode: "any",
+  excludeFoldersMode: "any",
+  openInNewTab: true
 };
 
 async function getSettings() {
@@ -32,11 +37,9 @@ function normalizeTagList(list) {
 
 async function walkTree() {
   const tree = await browser.bookmarks.getTree();
-  const idToPath = new Map();
   const bookmarks = [];
   const walk = (node, path) => {
     const here = node.title ? [...path, node.title] : path;
-    idToPath.set(node.id, here);
     if (node.url) {
       bookmarks.push({ node, folderPath: path });
     }
@@ -45,61 +48,71 @@ async function walkTree() {
     }
   };
   for (const root of tree) walk(root, []);
-  return { idToPath, bookmarks };
+  return { bookmarks };
 }
 
-function folderMatches(folderPath, patterns) {
+function combine(values, predicate, mode) {
+  if (mode === "all") return values.every(predicate);
+  return values.some(predicate);
+}
+
+function folderMatches(folderPath, patterns, mode) {
   if (!patterns.length) return false;
   const pathStr = folderPath.join("/").toLowerCase();
-  return patterns.some(p => {
+  const hit = p => {
     const needle = p.toLowerCase();
     if (needle.includes("/")) return pathStr.includes(needle);
     return folderPath.some(seg => seg.toLowerCase() === needle);
-  });
+  };
+  return combine(patterns, hit, mode);
 }
 
-function keywordMatches(haystack, keywords) {
+function keywordMatches(haystack, keywords, mode) {
   if (!keywords.length) return false;
   const hay = haystack.toLowerCase();
-  return keywords.some(k => hay.includes(k));
+  return combine(keywords, k => hay.includes(k), mode);
 }
 
-function tagMatches(tags, wanted) {
+function tagMatches(tags, wanted, mode) {
   if (!wanted.length) return false;
-  return wanted.some(t => tags.includes(t));
+  return combine(wanted, t => tags.includes(t), mode);
 }
 
 function passesIncludeFilters(bookmark, folderPath, settings) {
-  const hasAnyInclude =
-    settings.includeKeywords.length ||
-    settings.includeTags.length ||
-    settings.includeFolders.length;
-
-  if (!hasAnyInclude) return true;
-
   const haystack = `${bookmark.title || ""} ${bookmark.url || ""}`;
   const tags = extractTags(bookmark.title);
 
-  const kwHit = keywordMatches(haystack, settings.includeKeywords);
-  const tagHit = tagMatches(tags, settings.includeTags);
-  const folderHit = folderMatches(folderPath, settings.includeFolders);
-
-  const activeHits = [];
-  if (settings.includeKeywords.length) activeHits.push(kwHit);
-  if (settings.includeTags.length) activeHits.push(tagHit);
-  if (settings.includeFolders.length) activeHits.push(folderHit);
-
-  if (settings.matchMode === "all") return activeHits.every(Boolean);
-  return activeHits.some(Boolean);
+  if (settings.includeKeywords.length &&
+      !keywordMatches(haystack, settings.includeKeywords, settings.includeKeywordsMode)) {
+    return false;
+  }
+  if (settings.includeTags.length &&
+      !tagMatches(tags, settings.includeTags, settings.includeTagsMode)) {
+    return false;
+  }
+  if (settings.includeFolders.length &&
+      !folderMatches(folderPath, settings.includeFolders, settings.includeFoldersMode)) {
+    return false;
+  }
+  return true;
 }
 
 function passesExcludeFilters(bookmark, folderPath, settings) {
   const haystack = `${bookmark.title || ""} ${bookmark.url || ""}`;
   const tags = extractTags(bookmark.title);
 
-  if (keywordMatches(haystack, settings.excludeKeywords)) return false;
-  if (tagMatches(tags, settings.excludeTags)) return false;
-  if (folderMatches(folderPath, settings.excludeFolders)) return false;
+  if (settings.excludeKeywords.length &&
+      keywordMatches(haystack, settings.excludeKeywords, settings.excludeKeywordsMode)) {
+    return false;
+  }
+  if (settings.excludeTags.length &&
+      tagMatches(tags, settings.excludeTags, settings.excludeTagsMode)) {
+    return false;
+  }
+  if (settings.excludeFolders.length &&
+      folderMatches(folderPath, settings.excludeFolders, settings.excludeFoldersMode)) {
+    return false;
+  }
   return true;
 }
 

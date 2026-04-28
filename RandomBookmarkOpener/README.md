@@ -12,8 +12,15 @@ keywords, and subfolders.
   - **Keywords** (substring match against title + URL)
   - **Tags** (tokens like `#reading` inside bookmark titles)
   - **Folders** (by name, e.g. `Work`, or by path fragment, e.g. `Toolbar/Docs`)
-- **Match mode** for include filters: ANY active filter (default) or ALL.
-- **Exclude filters** with the same three dimensions (keywords, tags, folders).
+- **Per-field match mode.** Each filter field has its own *match any* /
+  *match all* toggle. Set Tags to *match all* to require a bookmark to have
+  every tag you list (e.g. `travel, germany` → must have both `#travel` and
+  `#germany`). Tags default to *match all*; keywords and folders default to
+  *match any*.
+- **Cross-field combination** is always AND: a bookmark must satisfy every
+  populated include field.
+- **Exclude filters** with the same three dimensions (keywords, tags, folders),
+  each with its own match mode (default *match any* — drop on a single match).
   Exclusions always override includes.
 - **Empty-pool feedback.** When no bookmarks match, the toolbar shows a brief
   `0` badge instead of silently doing nothing.
@@ -59,10 +66,11 @@ bookmark to `Hacker News #reading #tech` to tag it.
 
 ### Include vs exclude
 - If **no** include filters are set, every bookmark is eligible.
-- If any include filters are set, a bookmark must pass them (ANY or ALL,
-  based on match mode) to be eligible.
-- If **any** exclude filter matches, the bookmark is dropped regardless of
-  include matches.
+- If any include field is populated, the bookmark must pass that field
+  (using the field's own *match any* / *match all* mode), AND it must
+  pass every other populated include field.
+- If a bookmark matches any populated exclude field (per that field's mode),
+  the bookmark is dropped regardless of include matches.
 
 ## File layout
 

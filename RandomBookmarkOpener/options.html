@@ -9,67 +9,114 @@
   <main>
     <h1>Random Bookmark Opener</h1>
     <p class="lead">
-      Click the toolbar icon to open a random bookmark. Use the filters below to
-      narrow which bookmarks are eligible. All fields accept comma-separated
-      values. Filters are case-insensitive.
+      Click the toolbar icon to open a random bookmark. Use the filters below
+      to narrow the candidate pool. All fields take comma-separated values and
+      are case-insensitive. Each field has its own
+      <strong>match any</strong> / <strong>match all</strong> mode — for
+      example, set Tags to <em>match all</em> to require a bookmark to have
+      every tag you list.
     </p>
 
     <section>
       <h2>Include filters</h2>
       <p class="hint">
-        Only bookmarks matching these are eligible. Leave all blank to allow
-        every bookmark.
+        Only bookmarks that pass <em>every populated</em> include field are
+        eligible. Leave a field blank to skip it. If all three are blank, every
+        bookmark is eligible.
       </p>
 
-      <label>
-        <span>Keywords (match in title or URL)</span>
-        <input id="includeKeywords" type="text" placeholder="e.g. docs, recipe, python">
-      </label>
-
-      <label>
-        <span>Tags (matches <code>#tag</code> tokens in bookmark titles; <code>#</code> optional here)</span>
-        <input id="includeTags" type="text" placeholder="e.g. travel, germany  (or #travel, #germany)">
-      </label>
-
-      <label>
-        <span>Folders (folder name or path, e.g. <code>Toolbar/Work</code>)</span>
-        <input id="includeFolders" type="text" placeholder="e.g. Work, Recipes, Toolbar/News">
-      </label>
-
-      <fieldset class="radios">
-        <legend>Combine include filters using:</legend>
-        <label class="inline">
-          <input type="radio" name="matchMode" value="any" checked>
-          Match ANY active include filter
+      <div class="row">
+        <label class="grow">
+          <span>Keywords (substring match in title or URL)</span>
+          <input id="includeKeywords" type="text" placeholder="e.g. docs, recipe, python">
         </label>
-        <label class="inline">
-          <input type="radio" name="matchMode" value="all">
-          Match ALL active include filters
+        <label class="mode">
+          <span>Mode</span>
+          <select id="includeKeywordsMode">
+            <option value="any">match any</option>
+            <option value="all">match all</option>
+          </select>
         </label>
-      </fieldset>
+      </div>
+
+      <div class="row">
+        <label class="grow">
+          <span>Tags (matches <code>#tag</code> tokens in titles; <code>#</code> optional here)</span>
+          <input id="includeTags" type="text" placeholder="e.g. travel, germany  (or #travel, #germany)">
+        </label>
+        <label class="mode">
+          <span>Mode</span>
+          <select id="includeTagsMode">
+            <option value="any">match any</option>
+            <option value="all">match all</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row">
+        <label class="grow">
+          <span>Folders (folder name or path, e.g. <code>Toolbar/Work</code>)</span>
+          <input id="includeFolders" type="text" placeholder="e.g. Work, Recipes, Toolbar/News">
+        </label>
+        <label class="mode">
+          <span>Mode</span>
+          <select id="includeFoldersMode">
+            <option value="any">match any</option>
+            <option value="all">match all</option>
+          </select>
+        </label>
+      </div>
     </section>
 
     <section>
       <h2>Exclude filters</h2>
       <p class="hint">
-        Bookmarks matching any of these will be skipped. Exclusions override
-        includes.
+        Bookmarks matching an exclude rule are dropped, even if they pass the
+        include filters. Default mode is <em>match any</em> (drop on any single
+        match).
       </p>
 
-      <label>
-        <span>Exclude keywords</span>
-        <input id="excludeKeywords" type="text" placeholder="e.g. archive, draft">
-      </label>
+      <div class="row">
+        <label class="grow">
+          <span>Exclude keywords</span>
+          <input id="excludeKeywords" type="text" placeholder="e.g. archive, draft">
+        </label>
+        <label class="mode">
+          <span>Mode</span>
+          <select id="excludeKeywordsMode">
+            <option value="any">match any</option>
+            <option value="all">match all</option>
+          </select>
+        </label>
+      </div>
 
-      <label>
-        <span>Exclude tags</span>
-        <input id="excludeTags" type="text" placeholder="e.g. stale, nsfw">
-      </label>
+      <div class="row">
+        <label class="grow">
+          <span>Exclude tags</span>
+          <input id="excludeTags" type="text" placeholder="e.g. stale, nsfw">
+        </label>
+        <label class="mode">
+          <span>Mode</span>
+          <select id="excludeTagsMode">
+            <option value="any">match any</option>
+            <option value="all">match all</option>
+          </select>
+        </label>
+      </div>
 
-      <label>
-        <span>Exclude folders</span>
-        <input id="excludeFolders" type="text" placeholder="e.g. Trash, Old, Archive">
-      </label>
+      <div class="row">
+        <label class="grow">
+          <span>Exclude folders</span>
+          <input id="excludeFolders" type="text" placeholder="e.g. Trash, Old, Archive">
+        </label>
+        <label class="mode">
+          <span>Mode</span>
+          <select id="excludeFoldersMode">
+            <option value="any">match any</option>
+            <option value="all">match all</option>
+          </select>
+        </label>
+      </div>
     </section>
 
     <section>
@@ -90,19 +137,26 @@
       <h2>Tips</h2>
       <ul>
         <li>
-          <strong>Tags:</strong> Firefox's internal tag database isn't available
+          <strong>Match all on tags</strong> is the common case — e.g. enter
+          <code>travel, germany</code> with mode <em>match all</em> to require
+          a bookmark whose title contains both <code>#travel</code> and
+          <code>#germany</code>.
+        </li>
+        <li>
+          <strong>Tags:</strong> Firefox's internal tag database isn't exposed
           to extensions, so this add-on treats <code>#word</code> tokens inside
-          a bookmark's title as tags. Edit a bookmark's name to add or remove
+          a bookmark's title as tags. Edit a bookmark's title to add or remove
           them.
         </li>
         <li>
-          <strong>Folders:</strong> A plain name (<code>Work</code>) matches any
-          folder with that name in the bookmark's ancestry. Use a slash
-          (<code>Toolbar/Work/Docs</code>) to match a specific path fragment.
+          <strong>Folders:</strong> A plain name (<code>Work</code>) matches
+          any folder with that name in the bookmark's ancestry. Use a slash
+          (<code>Toolbar/Work/Docs</code>) to require a specific path
+          fragment.
         </li>
         <li>
-          <strong>Keywords:</strong> Simple case-insensitive substring match
-          against the bookmark's title and URL.
+          <strong>Keywords:</strong> Simple substring match against title +
+          URL.
         </li>
       </ul>
     </section>
