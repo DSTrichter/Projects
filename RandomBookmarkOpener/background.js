@@ -26,6 +26,10 @@ function normalizeList(list) {
     .filter(Boolean);
 }
 
+function normalizeTagList(list) {
+  return normalizeList(list).map(t => t.replace(/^#/, ""));
+}
+
 async function walkTree() {
   const tree = await browser.bookmarks.getTree();
   const idToPath = new Map();
@@ -116,10 +120,10 @@ async function openRandomBookmark() {
   const settings = {
     ...raw,
     includeKeywords: normalizeList(raw.includeKeywords),
-    includeTags: normalizeList(raw.includeTags),
+    includeTags: normalizeTagList(raw.includeTags),
     includeFolders: normalizeList(raw.includeFolders),
     excludeKeywords: normalizeList(raw.excludeKeywords),
-    excludeTags: normalizeList(raw.excludeTags),
+    excludeTags: normalizeTagList(raw.excludeTags),
     excludeFolders: normalizeList(raw.excludeFolders)
   };
 
