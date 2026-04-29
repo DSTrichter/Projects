@@ -23,8 +23,17 @@ keywords, and subfolders.
 - **Exclude filters** with the same three dimensions (keywords, tags, folders),
   each with its own match mode (default *match any* — drop on a single match).
   Exclusions always override includes.
-- **Empty-pool feedback.** When no bookmarks match, the toolbar shows a brief
-  `0` badge instead of silently doing nothing.
+- **Whole-word matches.** Keywords match against title/URL using word
+  boundaries — `mars` won't match `marsupial.com`. Tag search results are
+  post-filtered the same way (with a fall-through that keeps results that
+  must have come from the actual tag, since the API doesn't expose tag
+  text).
+- **Skip dead pages.** Before opening, the chosen page is fetched and its
+  HTML scanned for configurable phrases (default `"has been disabled"`).
+  If any match, a different bookmark is picked instead. Configurable in the
+  options page; leave blank to disable the network check.
+- **Empty-pool feedback.** When no bookmarks match, a desktop notification
+  fires and the toolbar shows a brief `0` badge.
 - **Keyboard shortcut.** Default `Alt+Shift+R`. Customize at `about:addons` →
   gear icon (top right) → **Manage Extension Shortcuts**.
 
@@ -101,5 +110,7 @@ RandomBookmarkOpener/
 - `bookmarks` — read the bookmark tree to pick a candidate.
 - `storage` — persist your filter settings.
 - `tabs` — open the picked bookmark in a new or current tab.
-
-No network requests, no telemetry.
+- `notifications` — show a desktop notification when no bookmarks match.
+- `<all_urls>` — fetch the chosen page in the background to check it for
+  the skip phrases (e.g. `has been disabled`). The fetch is only made on the
+  one bookmark you're about to open. No telemetry; nothing is sent off-machine.

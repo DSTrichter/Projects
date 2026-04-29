@@ -11,7 +11,10 @@ const DEFAULT_SETTINGS = {
   excludeKeywordsMode: "any",
   excludeTagsMode: "any",
   excludeFoldersMode: "any",
-  openInNewTab: true
+  openInNewTab: true,
+  skipPhrases: ["has been disabled"],
+  skipFetchTimeoutMs: 5000,
+  skipMaxRetries: 8
 };
 
 async function getSettings() {
@@ -27,6 +30,16 @@ function normalizeList(list) {
 
 function normalizeTagList(list) {
   return normalizeList(list).map(t => t.replace(/^#/, ""));
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function wholeWord(haystack, term) {
+  if (!term) return false;
+  const re = new RegExp(`\\b${escapeRegex(term)}\\b`, "i");
+  return re.test(haystack);
 }
 
 async function walkTree() {
@@ -63,8 +76,17 @@ function folderMatches(folderPath, patterns, mode) {
 
 function keywordMatches(haystack, keywords, mode) {
   if (!keywords.length) return false;
-  const hay = haystack.toLowerCase();
-  return combine(keywords, k => hay.includes(k), mode);
+  return combine(keywords, k => wholeWord(haystack, k), mode);
+}
+
+function tagResultPasses(node, term) {
+  const title = (node.title || "").toLowerCase();
+  const url = (node.url || "").toLowerCase();
+  const t = term.toLowerCase();
+  const inTitleSubstr = title.includes(t);
+  const inUrlSubstr = url.includes(t);
+  if (!inTitleSubstr && !inUrlSubstr) return true;
+  return wholeWord(title, t) || wholeWord(url, t);
 }
 
 async function tagSearchSet(tagValues, mode) {
@@ -72,7 +94,11 @@ async function tagSearchSet(tagValues, mode) {
   const sets = await Promise.all(
     tagValues.map(async value => {
       const results = await browser.bookmarks.search(value);
-      return new Set(results.filter(r => r.url).map(r => r.id));
+      return new Set(
+        results
+          .filter(r => r.url && tagResultPasses(r, value))
+          .map(r => r.id)
+      );
     })
   );
   if (mode === "all") {
@@ -147,7 +173,69 @@ async function collectCandidates(settings) {
   };
 }
 
+async function pageContainsAny(url, phrases, timeoutMs) {
+  if (!phrases.length) return false;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { redirect: "follow", signal: controller.signal });
+    if (!res.ok) return false;
+    const text = await res.text();
+    const lower = text.toLowerCase();
+    return phrases.some(p => lower.includes(p.toLowerCase()));
+  } catch (e) {
+    console.warn("[RandomBookmark] fetch check failed for", url, e.message || e);
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function pickLivePick(candidates, settings) {
+  const skipPhrases = (settings.skipPhrases || [])
+    .map(s => String(s).trim())
+    .filter(Boolean);
+  const maxRetries = Math.max(1, settings.skipMaxRetries | 0 || 8);
+  const timeoutMs = settings.skipFetchTimeoutMs | 0 || 5000;
+
+  const pool = [...candidates];
+  let lastTried = null;
+
+  if (!skipPhrases.length) {
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  for (let i = 0; i < maxRetries && pool.length; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const c = pool[idx];
+    lastTried = c;
+    const dead = await pageContainsAny(c.node.url, skipPhrases, timeoutMs);
+    if (!dead) return c;
+    console.log("[RandomBookmark] skipping (matched skip phrase):", c.node.url);
+    pool.splice(idx, 1);
+  }
+  return lastTried;
+}
+
 const browserAction = browser.browserAction || browser.action;
+
+async function notifyEmpty() {
+  await browserAction.setBadgeBackgroundColor({ color: "#c0392b" });
+  await browserAction.setBadgeText({ text: "0" });
+  setTimeout(() => browserAction.setBadgeText({ text: "" }), 2000);
+  if (browser.notifications) {
+    try {
+      await browser.notifications.create({
+        type: "basic",
+        iconUrl: browser.runtime.getURL("icons/icon-96.png"),
+        title: "Random Bookmark Opener",
+        message: "No bookmarks match the current filters. Open the options page to adjust them."
+      });
+    } catch (e) {
+      console.warn("[RandomBookmark] notification failed", e);
+    }
+  }
+}
 
 async function openRandomBookmark() {
   const raw = await getSettings();
@@ -171,35 +259,18 @@ async function openRandomBookmark() {
     (excludeTagSetSize !== null ? ` (exclude-tag search matched ${excludeTagSetSize})` : "")
   );
 
-  if (candidates.length) {
-    const sample = candidates.slice(0, 5).map(c => ({
-      title: c.node.title,
-      folder: c.folderPath.join("/"),
-      url: c.node.url
-    }));
-    console.log("[RandomBookmark] first up to 5 candidates:", sample);
-  }
-
   if (!candidates.length) {
-    await browserAction.setBadgeBackgroundColor({ color: "#c0392b" });
-    await browserAction.setBadgeText({ text: "0" });
-    setTimeout(() => browserAction.setBadgeText({ text: "" }), 2000);
-    if (browser.notifications) {
-      try {
-        await browser.notifications.create({
-          type: "basic",
-          iconUrl: browser.runtime.getURL("icons/icon-96.png"),
-          title: "Random Bookmark Opener",
-          message: "No bookmarks match the current filters. Open the options page to adjust them."
-        });
-      } catch (e) {
-        console.warn("[RandomBookmark] notification failed", e);
-      }
-    }
+    await notifyEmpty();
     return;
   }
 
-  const { node: pick, folderPath } = candidates[Math.floor(Math.random() * candidates.length)];
+  const choice = await pickLivePick(candidates, settings);
+  if (!choice) {
+    await notifyEmpty();
+    return;
+  }
+
+  const { node: pick, folderPath } = choice;
   console.log("[RandomBookmark] picked:", {
     title: pick.title,
     folder: folderPath.join("/"),

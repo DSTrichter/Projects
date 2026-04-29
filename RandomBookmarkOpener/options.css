@@ -102,7 +102,7 @@ select:focus {
   .row > .mode { flex: 1 1 auto; }
 }
 
-input[type="text"] {
+input[type="text"], textarea {
   width: 100%;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border);
@@ -110,9 +110,15 @@ input[type="text"] {
   background: var(--bg);
   color: var(--fg);
   font-size: 0.95rem;
+  font-family: inherit;
 }
 
-input[type="text"]:focus {
+textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+input[type="text"]:focus, textarea:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);

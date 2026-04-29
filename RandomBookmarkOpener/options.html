@@ -125,6 +125,17 @@
         <input id="openInNewTab" type="checkbox" checked>
         Open in a new tab (uncheck to replace the current tab)
       </label>
+
+      <label>
+        <span>Skip pages whose HTML contains any of these phrases (one per line)</span>
+        <textarea id="skipPhrases" rows="3" placeholder="has been disabled"></textarea>
+      </label>
+      <p class="hint">
+        Before opening, the chosen page is fetched and its HTML scanned for
+        these phrases (case-insensitive). If any match, a different bookmark
+        is picked instead. Leave blank to disable this check entirely (also
+        skips the network fetch). Up to 8 retries before giving up.
+      </p>
     </section>
 
     <div class="actions">

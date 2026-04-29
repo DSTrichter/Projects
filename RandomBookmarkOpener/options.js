@@ -11,7 +11,8 @@ const DEFAULTS = {
   excludeKeywordsMode: "any",
   excludeTagsMode: "any",
   excludeFoldersMode: "any",
-  openInNewTab: true
+  openInNewTab: true,
+  skipPhrases: ["has been disabled"]
 };
 
 const LIST_FIELDS = [
@@ -48,6 +49,7 @@ async function load() {
     if (el) el.value = settings[field] === "all" ? "all" : "any";
   }
   document.getElementById("openInNewTab").checked = !!settings.openInNewTab;
+  document.getElementById("skipPhrases").value = (settings.skipPhrases || []).join("\n");
 }
 
 async function save() {
@@ -60,6 +62,10 @@ async function save() {
     settings[field] = el && el.value === "all" ? "all" : "any";
   }
   settings.openInNewTab = document.getElementById("openInNewTab").checked;
+  settings.skipPhrases = document.getElementById("skipPhrases").value
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(Boolean);
 
   await browser.storage.local.set({ settings });
   flashStatus("Saved.");
