@@ -120,6 +120,25 @@
     </section>
 
     <section>
+      <h2>Date added</h2>
+      <p class="hint">
+        Restrict candidates to bookmarks added on or after the earliest date,
+        and on or before the latest date. Leave either blank for no bound on
+        that side. Both blank = no date filter.
+      </p>
+      <div class="row">
+        <label class="grow">
+          <span>Earliest (any if blank)</span>
+          <input id="earliestDate" type="date">
+        </label>
+        <label class="grow">
+          <span>Latest (any if blank)</span>
+          <input id="latestDate" type="date">
+        </label>
+      </div>
+    </section>
+
+    <section>
       <h2>Behavior</h2>
       <label class="inline">
         <input id="openInNewTab" type="checkbox" checked>

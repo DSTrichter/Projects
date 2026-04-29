@@ -11,6 +11,8 @@ const DEFAULTS = {
   excludeKeywordsMode: "any",
   excludeTagsMode: "any",
   excludeFoldersMode: "any",
+  earliestDate: "",
+  latestDate: "",
   openInNewTab: true,
   openCount: 1,
   skipPhrases: ["has been disabled"]
@@ -49,6 +51,8 @@ async function load() {
     const el = document.getElementById(field);
     if (el) el.value = settings[field] === "all" ? "all" : "any";
   }
+  document.getElementById("earliestDate").value = settings.earliestDate || "";
+  document.getElementById("latestDate").value = settings.latestDate || "";
   document.getElementById("openInNewTab").checked = !!settings.openInNewTab;
   document.getElementById("openCount").value = Math.max(1, Math.min(50, settings.openCount | 0 || 1));
   document.getElementById("skipPhrases").value = (settings.skipPhrases || []).join("\n");
@@ -63,6 +67,8 @@ async function save() {
     const el = document.getElementById(field);
     settings[field] = el && el.value === "all" ? "all" : "any";
   }
+  settings.earliestDate = document.getElementById("earliestDate").value || "";
+  settings.latestDate = document.getElementById("latestDate").value || "";
   settings.openInNewTab = document.getElementById("openInNewTab").checked;
   const rawCount = parseInt(document.getElementById("openCount").value, 10);
   settings.openCount = Math.max(1, Math.min(50, Number.isFinite(rawCount) ? rawCount : 1));

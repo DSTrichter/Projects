@@ -11,6 +11,8 @@ const DEFAULT_SETTINGS = {
   excludeKeywordsMode: "any",
   excludeTagsMode: "any",
   excludeFoldersMode: "any",
+  earliestDate: "",
+  latestDate: "",
   openInNewTab: true,
   openCount: 1,
   skipPhrases: ["has been disabled"],
@@ -30,6 +32,26 @@ function normalizeList(list) {
 
 function normalizeTagList(list) {
   return normalizeList(list).map(t => t.replace(/^#/, ""));
+}
+
+function dateStringToMs(s, endOfDay) {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s).trim());
+  if (!m) return null;
+  const [, y, mo, d] = m.map(Number);
+  const dt = endOfDay
+    ? new Date(y, mo - 1, d, 23, 59, 59, 999)
+    : new Date(y, mo - 1, d, 0, 0, 0, 0);
+  const t = dt.getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+function dateInRange(node, earliestMs, latestMs) {
+  if (earliestMs === null && latestMs === null) return true;
+  if (typeof node.dateAdded !== "number") return true;
+  if (earliestMs !== null && node.dateAdded < earliestMs) return false;
+  if (latestMs !== null && node.dateAdded > latestMs) return false;
+  return true;
 }
 
 function escapeRegex(s) {
@@ -156,11 +178,16 @@ async function collectCandidates(settings) {
     tagSearchSet(settings.excludeTags, settings.excludeTagsMode)
   ]);
 
+  const earliestMs = dateStringToMs(settings.earliestDate, false);
+  const latestMs = dateStringToMs(settings.latestDate, true);
+
   const candidates = [];
   let totalUrls = 0;
+  let droppedByDate = 0;
   for (const { node, folderPath } of bookmarks) {
     if (!/^https?:|^ftp:|^file:/i.test(node.url)) continue;
     totalUrls++;
+    if (!dateInRange(node, earliestMs, latestMs)) { droppedByDate++; continue; }
     if (!passesIncludeFilters(node, folderPath, settings, includeTagSet)) continue;
     if (!passesExcludeFilters(node, folderPath, settings, excludeTagSet)) continue;
     candidates.push({ node, folderPath });
@@ -168,6 +195,12 @@ async function collectCandidates(settings) {
   return {
     candidates,
     totalUrls,
+    droppedByDate,
+    dateRange: {
+      earliestMs,
+      latestMs,
+      active: earliestMs !== null || latestMs !== null
+    },
     includeTagSetSize: includeTagSet ? includeTagSet.size : null,
     excludeTagSetSize: excludeTagSet ? excludeTagSet.size : null
   };
@@ -250,9 +283,10 @@ async function openRandomBookmark() {
   console.log("[RandomBookmark] active settings:", JSON.stringify(settings, null, 2));
 
   const result = await collectCandidates(settings);
-  const { candidates, totalUrls, includeTagSetSize, excludeTagSetSize } = result;
+  const { candidates, totalUrls, droppedByDate, dateRange, includeTagSetSize, excludeTagSetSize } = result;
   console.log(
     `[RandomBookmark] ${candidates.length} candidate(s) of ${totalUrls} bookmarks` +
+    (dateRange.active ? ` (${droppedByDate} dropped by date range)` : "") +
     (includeTagSetSize !== null ? ` (include-tag search matched ${includeTagSetSize})` : "") +
     (excludeTagSetSize !== null ? ` (exclude-tag search matched ${excludeTagSetSize})` : "")
   );

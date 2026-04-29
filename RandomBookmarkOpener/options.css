@@ -102,7 +102,7 @@ select:focus {
   .row > .mode { flex: 1 1 auto; }
 }
 
-input[type="text"], input[type="number"], textarea {
+input[type="text"], input[type="number"], input[type="date"], textarea {
   width: 100%;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border);
@@ -118,7 +118,7 @@ textarea {
   min-height: 4rem;
 }
 
-input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, textarea:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);

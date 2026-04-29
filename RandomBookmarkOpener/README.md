@@ -23,6 +23,9 @@ keywords, and subfolders.
 - **Exclude filters** with the same three dimensions (keywords, tags, folders),
   each with its own match mode (default *match any* — drop on a single match).
   Exclusions always override includes.
+- **Date-added range.** Optional earliest / latest dates. Bookmarks
+  added outside the range are excluded. Either bound can be left blank
+  for "no limit on that side"; both blank disables the filter.
 - **Open one or many.** Configurable count (default 1, max 50). For
   count > 1, draws distinct candidates without replacement; the first
   becomes the active tab and the rest open in the background.
