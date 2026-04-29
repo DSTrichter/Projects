@@ -127,14 +127,25 @@
       </label>
 
       <label>
+        <span>How many to open per click</span>
+        <input id="openCount" type="number" min="1" max="50" value="1">
+      </label>
+      <p class="hint">
+        When greater than 1, draws that many distinct candidates without
+        replacement. Only the first opened tab steals focus; the rest open
+        in the background. Capped at 50.
+      </p>
+
+      <label>
         <span>Skip pages whose HTML contains any of these phrases (one per line)</span>
         <textarea id="skipPhrases" rows="3" placeholder="has been disabled"></textarea>
       </label>
       <p class="hint">
         Before opening, the chosen page is fetched and its HTML scanned for
         these phrases (case-insensitive). If any match, a different bookmark
-        is picked instead. Leave blank to disable this check entirely (also
-        skips the network fetch). Up to 8 retries before giving up.
+        is picked instead, drawing without replacement until enough live
+        candidates are found or the pool is exhausted. Leave blank to
+        disable this check entirely (and skip the network fetch).
       </p>
     </section>
 

@@ -12,9 +12,9 @@ const DEFAULT_SETTINGS = {
   excludeTagsMode: "any",
   excludeFoldersMode: "any",
   openInNewTab: true,
+  openCount: 1,
   skipPhrases: ["has been disabled"],
-  skipFetchTimeoutMs: 5000,
-  skipMaxRetries: 8
+  skipFetchTimeoutMs: 5000
 };
 
 async function getSettings() {
@@ -191,30 +191,28 @@ async function pageContainsAny(url, phrases, timeoutMs) {
   }
 }
 
-async function pickLivePick(candidates, settings) {
+async function pickLivePicks(candidates, want, settings) {
   const skipPhrases = (settings.skipPhrases || [])
     .map(s => String(s).trim())
     .filter(Boolean);
-  const maxRetries = Math.max(1, settings.skipMaxRetries | 0 || 8);
   const timeoutMs = settings.skipFetchTimeoutMs | 0 || 5000;
 
   const pool = [...candidates];
-  let lastTried = null;
+  const picks = [];
 
-  if (!skipPhrases.length) {
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  for (let i = 0; i < maxRetries && pool.length; i++) {
+  while (picks.length < want && pool.length) {
     const idx = Math.floor(Math.random() * pool.length);
-    const c = pool[idx];
-    lastTried = c;
-    const dead = await pageContainsAny(c.node.url, skipPhrases, timeoutMs);
-    if (!dead) return c;
-    console.log("[RandomBookmark] skipping (matched skip phrase):", c.node.url);
-    pool.splice(idx, 1);
+    const c = pool.splice(idx, 1)[0];
+    if (skipPhrases.length) {
+      const dead = await pageContainsAny(c.node.url, skipPhrases, timeoutMs);
+      if (dead) {
+        console.log("[RandomBookmark] skipping (matched skip phrase):", c.node.url);
+        continue;
+      }
+    }
+    picks.push(c);
   }
-  return lastTried;
+  return picks;
 }
 
 const browserAction = browser.browserAction || browser.action;
@@ -264,22 +262,27 @@ async function openRandomBookmark() {
     return;
   }
 
-  const choice = await pickLivePick(candidates, settings);
-  if (!choice) {
+  const want = Math.max(1, Math.min(50, settings.openCount | 0 || 1));
+  const picks = await pickLivePicks(candidates, want, settings);
+  if (!picks.length) {
     await notifyEmpty();
     return;
   }
 
-  const { node: pick, folderPath } = choice;
-  console.log("[RandomBookmark] picked:", {
-    title: pick.title,
-    folder: folderPath.join("/"),
-    url: pick.url
-  });
-  if (settings.openInNewTab) {
-    await browser.tabs.create({ url: pick.url, active: true });
-  } else {
-    await browser.tabs.update({ url: pick.url });
+  console.log(`[RandomBookmark] opening ${picks.length} of ${want} requested`);
+  for (let i = 0; i < picks.length; i++) {
+    const { node: pick, folderPath } = picks[i];
+    console.log("[RandomBookmark] picked:", {
+      title: pick.title,
+      folder: folderPath.join("/"),
+      url: pick.url
+    });
+    const isFirst = i === 0;
+    if (settings.openInNewTab || !isFirst) {
+      await browser.tabs.create({ url: pick.url, active: isFirst });
+    } else {
+      await browser.tabs.update({ url: pick.url });
+    }
   }
 }
 

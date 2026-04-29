@@ -23,6 +23,12 @@ keywords, and subfolders.
 - **Exclude filters** with the same three dimensions (keywords, tags, folders),
   each with its own match mode (default *match any* — drop on a single match).
   Exclusions always override includes.
+- **Open one or many.** Configurable count (default 1, max 50). For
+  count > 1, draws distinct candidates without replacement; the first
+  becomes the active tab and the rest open in the background.
+- **Uniform random pick.** Each surviving candidate has equal probability
+  `1/N`. Independent draws — clicking twice can pick the same bookmark
+  unless count > 1 (within a single click, picks are unique).
 - **Whole-word matches.** Keywords match against title/URL using word
   boundaries — `mars` won't match `marsupial.com`. Tag search results are
   post-filtered the same way (with a fall-through that keeps results that

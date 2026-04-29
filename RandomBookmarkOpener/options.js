@@ -12,6 +12,7 @@ const DEFAULTS = {
   excludeTagsMode: "any",
   excludeFoldersMode: "any",
   openInNewTab: true,
+  openCount: 1,
   skipPhrases: ["has been disabled"]
 };
 
@@ -49,6 +50,7 @@ async function load() {
     if (el) el.value = settings[field] === "all" ? "all" : "any";
   }
   document.getElementById("openInNewTab").checked = !!settings.openInNewTab;
+  document.getElementById("openCount").value = Math.max(1, Math.min(50, settings.openCount | 0 || 1));
   document.getElementById("skipPhrases").value = (settings.skipPhrases || []).join("\n");
 }
 
@@ -62,6 +64,8 @@ async function save() {
     settings[field] = el && el.value === "all" ? "all" : "any";
   }
   settings.openInNewTab = document.getElementById("openInNewTab").checked;
+  const rawCount = parseInt(document.getElementById("openCount").value, 10);
+  settings.openCount = Math.max(1, Math.min(50, Number.isFinite(rawCount) ? rawCount : 1));
   settings.skipPhrases = document.getElementById("skipPhrases").value
     .split(/\r?\n/)
     .map(s => s.trim())
