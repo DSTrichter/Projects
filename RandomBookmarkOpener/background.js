@@ -184,6 +184,18 @@ async function openRandomBookmark() {
     await browserAction.setBadgeBackgroundColor({ color: "#c0392b" });
     await browserAction.setBadgeText({ text: "0" });
     setTimeout(() => browserAction.setBadgeText({ text: "" }), 2000);
+    if (browser.notifications) {
+      try {
+        await browser.notifications.create({
+          type: "basic",
+          iconUrl: browser.runtime.getURL("icons/icon-96.png"),
+          title: "Random Bookmark Opener",
+          message: "No bookmarks match the current filters. Open the options page to adjust them."
+        });
+      } catch (e) {
+        console.warn("[RandomBookmark] notification failed", e);
+      }
+    }
     return;
   }
 
